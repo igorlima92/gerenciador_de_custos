@@ -6,6 +6,16 @@ $(document).ready(function(){
 // Array para armazenar despesas
 let despesas = [];
 
+// Carregar despesas salvas no Local Storage ao iniciar a aplicação
+window.addEventListener('load', function() {
+    const despesasSalvas = JSON.parse(localStorage.getItem('despesas'));
+    if (despesasSalvas) {
+        despesas = despesasSalvas;
+        ordenarDespesasPorData();
+        mostrarDespesas(despesas);
+    }
+});
+
 // Evento de envio do formulário de despesas
 document.getElementById('despesaForm').addEventListener('submit', function(event) {
     event.preventDefault();
@@ -19,6 +29,7 @@ document.getElementById('despesaForm').addEventListener('submit', function(event
     }
     despesas.push({ tipo: tipoDespesa, valor: valor, data: data });
     salvarDespesas(despesas);
+    ordenarDespesasPorData();
     mostrarDespesas(despesas);
     tipoDespesaSelect.selectedIndex = 0;
     document.getElementById('valor').value = '';
@@ -39,9 +50,14 @@ document.getElementById('tipoDespesa').addEventListener('change', function() {
     }
 });
 
-// Função para salvar despesas em localStorage
+// Função para salvar despesas no Local Storage
 function salvarDespesas(despesas) {
     localStorage.setItem('despesas', JSON.stringify(despesas));
+}
+
+// Função para ordenar despesas por data
+function ordenarDespesasPorData() {
+    despesas.sort((a, b) => new Date(a.data) - new Date(b.data));
 }
 
 // Função para mostrar despesas
@@ -49,10 +65,17 @@ function mostrarDespesas(despesas) {
     const resumoFinanceiro = document.getElementById('resumoFinanceiro');
     resumoFinanceiro.innerHTML = ''; // Limpa o conteúdo anterior
     let totalDespesas = 0;
-    despesas.forEach(despesa => {
+    despesas.forEach((despesa, index) => {
         const despesaItem = document.createElement('div');
-        despesaItem.classList.add('mb-2');
-        despesaItem.innerHTML = `<strong>${despesa.tipo}</strong>: R$ ${despesa.valor.toFixed(2)} - ${despesa.data}`;
+        despesaItem.classList.add('mb-2', 'd-flex', 'justify-content-between', 'align-items-center');
+        const descricaoDespesa = document.createElement('div');
+        descricaoDespesa.innerHTML = `<strong>${despesa.tipo}</strong>: R$ ${despesa.valor.toFixed(2)} - ${despesa.data}`;
+        const botaoExcluir = document.createElement('button');
+        botaoExcluir.classList.add('btn', 'btn-danger', 'btn-sm');
+        botaoExcluir.textContent = 'Excluir';
+        botaoExcluir.addEventListener('click', () => removerDespesa(index));
+        despesaItem.appendChild(descricaoDespesa);
+        despesaItem.appendChild(botaoExcluir);
         resumoFinanceiro.appendChild(despesaItem);
         totalDespesas += despesa.valor;
     });
@@ -60,4 +83,11 @@ function mostrarDespesas(despesas) {
     totalElement.classList.add('mt-3', 'fw-bold');
     totalElement.textContent = `Total de despesas: R$ ${totalDespesas.toFixed(2)}`;
     resumoFinanceiro.appendChild(totalElement);
+}
+
+// Função para remover despesa
+function removerDespesa(index) {
+    despesas.splice(index, 1);
+    salvarDespesas(despesas);
+    mostrarDespesas(despesas);
 }
